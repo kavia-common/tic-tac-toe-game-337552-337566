@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 
 /**
@@ -16,7 +16,9 @@ import "./App.css";
  *   - each cell is null | "X" | "O"
  *   - currentPlayer is always "X" or "O"
  * - Errors: none expected; invalid clicks are ignored deterministically
- * - Side effects: minimal; console logging of flow start/reset/win for debuggability
+ * - Side effects:
+ *   - minimal; console logging of flow start/reset/win for debuggability
+ *   - focus management on reset and game over (accessibility)
  */
 
 const PLAYER_X = "X";
@@ -113,11 +115,29 @@ function getStatusText(outcome, currentPlayer) {
 /**
  * A single square button.
  *
- * @param {{ value: Cell, onClick: () => void, isHighlighted: boolean, isDisabled: boolean, index: number }} props
+ * @param {{
+ *  value: Cell,
+ *  onClick: () => void,
+ *  isHighlighted: boolean,
+ *  isDisabled: boolean,
+ *  index: number,
+ *  currentPlayer: ("X"|"O"),
+ *  isGameOver: boolean
+ * }} props
  * @returns {JSX.Element}
  */
-function Square({ value, onClick, isHighlighted, isDisabled, index }) {
+function Square({ value, onClick, isHighlighted, isDisabled, index, currentPlayer, isGameOver }) {
   const ariaLabel = value ? `Square ${index + 1}, ${value}` : `Square ${index + 1}, empty`;
+
+  // Helpful hint for screen readers:
+  // - If empty and game is active: announces the action + which mark will be placed.
+  // - If game over: avoid implying further action is possible.
+  const ariaDescription = isGameOver
+    ? "Game over."
+    : value
+      ? "Occupied."
+      : `Press to place ${currentPlayer}.`;
+
   return (
     <button
       type="button"
@@ -125,8 +145,16 @@ function Square({ value, onClick, isHighlighted, isDisabled, index }) {
       onClick={onClick}
       disabled={isDisabled}
       aria-label={ariaLabel}
+      aria-describedby={`square-desc-${index}`}
+      aria-current={isHighlighted ? "true" : undefined}
     >
-      {value}
+      <span className="ttt-square__value" aria-hidden="true">
+        {value}
+      </span>
+      {/* Visually-hidden description for AT */}
+      <span id={`square-desc-${index}`} className="sr-only">
+        {ariaDescription}
+      </span>
     </button>
   );
 }
@@ -141,9 +169,13 @@ function App() {
   const [board, setBoard] = useState(() => createEmptyBoard());
   const [currentPlayer, setCurrentPlayer] = useState(PLAYER_X);
 
+  const resetButtonRef = useRef(null);
+
   // Derive outcome from board (single canonical source of truth for win/draw).
   const outcome = useMemo(() => computeOutcome(board), [board]);
   const statusText = useMemo(() => getStatusText(outcome, currentPlayer), [outcome, currentPlayer]);
+
+  const isGameOver = outcome.isGameOver;
 
   // Observability: log flow start (once).
   useEffect(() => {
@@ -163,11 +195,24 @@ function App() {
     }
   }, [outcome.isDraw, outcome.winner, outcome.winningLine]);
 
+  // Accessibility: move focus to the Reset button when the game ends.
+  useEffect(() => {
+    if (isGameOver) {
+      resetButtonRef.current?.focus();
+    }
+  }, [isGameOver]);
+
   const resetGame = useCallback(() => {
     // eslint-disable-next-line no-console
     console.info("[TicTacToeGameFlow] reset");
     setBoard(createEmptyBoard());
     setCurrentPlayer(PLAYER_X);
+
+    // After reset, keep keyboard users oriented.
+    // Using rAF ensures focus happens after the state flush/rerender.
+    window.requestAnimationFrame(() => {
+      resetButtonRef.current?.focus();
+    });
   }, []);
 
   const handleSquareClick = useCallback(
@@ -184,56 +229,78 @@ function App() {
       if (index < 0 || index > 8) return;
 
       // Guard: if game already ended, ignore clicks.
-      if (outcome.isGameOver) return;
+      if (isGameOver) return;
 
+      // Guard: ignore if cell already set (prevents overwrites).
+      if (board[index] !== null) return;
+
+      // Valid move: update board and toggle player.
       setBoard((prev) => {
-        // Guard: ignore if cell already set (prevents overwrites).
-        if (prev[index] !== null) return prev;
-
         const next = prev.slice();
         next[index] = currentPlayer;
         return next;
       });
 
-      // Update the player turn only if the move is valid.
-      // We cannot safely base this on board state here without duplicating logic;
-      // instead, we optimistically toggle, and we ensure invalid moves exit early above.
       setCurrentPlayer((p) => nextPlayer(p));
     },
-    [currentPlayer, outcome.isGameOver]
+    [board, currentPlayer, isGameOver]
   );
+
+  const statusTone = outcome.winner ? "win" : outcome.isDraw ? "draw" : "turn";
+
+  const gameHelpText = isGameOver
+    ? "Game over. Press Reset to play again."
+    : "Use Tab to focus a square, then press Enter/Space to place your mark.";
 
   return (
     <div className="App">
       <main className="ttt-page" role="main">
         <section className="ttt-card" aria-label="Tic Tac Toe game">
-          <h1 className="ttt-title">Tic Tac Toe</h1>
+          <header className="ttt-header">
+            <h1 className="ttt-title">Tic Tac Toe</h1>
+            <p className="ttt-subtitle">A clean, accessible 2‑player game.</p>
+          </header>
 
-          <div className="ttt-status" role="status" aria-live="polite">
+          <div className={`ttt-status ttt-status--${statusTone}`} role="status" aria-live="polite">
             {statusText}
           </div>
 
-          <div className="ttt-board" role="grid" aria-label="Tic Tac Toe board">
-            {board.map((cell, idx) => (
-              <Square
-                key={idx}
-                value={cell}
-                index={idx}
-                isHighlighted={Boolean(outcome.winningLine?.includes(idx))}
-                isDisabled={outcome.isGameOver || cell !== null}
-                onClick={() => handleSquareClick(idx)}
-              />
-            ))}
+          <div className="ttt-board-wrap">
+            <div
+              className="ttt-board"
+              role="grid"
+              aria-label="Tic Tac Toe board"
+              aria-describedby="game-help"
+            >
+              {board.map((cell, idx) => (
+                <Square
+                  key={idx}
+                  value={cell}
+                  index={idx}
+                  currentPlayer={currentPlayer}
+                  isGameOver={isGameOver}
+                  isHighlighted={Boolean(outcome.winningLine?.includes(idx))}
+                  isDisabled={isGameOver || cell !== null}
+                  onClick={() => handleSquareClick(idx)}
+                />
+              ))}
+            </div>
           </div>
 
           <div className="ttt-actions">
-            <button type="button" className="ttt-reset-btn" onClick={resetGame}>
+            <button
+              ref={resetButtonRef}
+              type="button"
+              className="ttt-reset-btn"
+              onClick={resetGame}
+              aria-label="Reset game"
+            >
               Reset
             </button>
           </div>
 
-          <p className="ttt-hint">
-            Tip: {PLAYER_X} goes first. Tap a square to place your mark.
+          <p id="game-help" className="ttt-hint">
+            {gameHelpText}
           </p>
         </section>
       </main>

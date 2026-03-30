@@ -34,7 +34,7 @@ describe("Tic Tac Toe core behaviors", () => {
     });
 
     // Reset button present
-    expect(screen.getByRole("button", { name: /reset/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /reset game/i })).toBeInTheDocument();
   });
 
   test("turn alternation: first click places X then turn becomes O; second click places O then turn becomes X", () => {
@@ -106,7 +106,7 @@ describe("Tic Tac Toe core behaviors", () => {
 
     expect(screen.getByRole("status")).toHaveTextContent("Winner: X");
 
-    fireEvent.click(screen.getByRole("button", { name: /reset/i }));
+    fireEvent.click(screen.getByRole("button", { name: /reset game/i }));
 
     // Back to initial state
     expect(screen.getByRole("status")).toHaveTextContent("Turn: X");
