@@ -15,6 +15,11 @@ function clickSquare(index) {
   return getSquares(); // re-fetch to avoid stale references after rerender
 }
 
+function getSquareValueEl(squareButton) {
+  // The button now contains SR-only descriptive text; the visible value is isolated here.
+  return squareButton.querySelector(".ttt-square__value");
+}
+
 describe("Tic Tac Toe core behaviors", () => {
   test("initial state: title renders, X goes first, board is empty, reset is available", () => {
     render(<App />);
@@ -28,7 +33,7 @@ describe("Tic Tac Toe core behaviors", () => {
     const squares = getSquares();
     expect(squares).toHaveLength(9);
     squares.forEach((sq, idx) => {
-      expect(sq).toHaveTextContent("");
+      expect(getSquareValueEl(sq)).toHaveTextContent("");
       expect(sq).toHaveAttribute("aria-label", `Square ${idx + 1}, empty`);
       expect(sq).not.toBeDisabled();
     });
@@ -41,11 +46,11 @@ describe("Tic Tac Toe core behaviors", () => {
     render(<App />);
 
     clickSquare(0);
-    expect(getSquares()[0]).toHaveTextContent("X");
+    expect(getSquareValueEl(getSquares()[0])).toHaveTextContent("X");
     expect(screen.getByRole("status")).toHaveTextContent("Turn: O");
 
     clickSquare(1);
-    expect(getSquares()[1]).toHaveTextContent("O");
+    expect(getSquareValueEl(getSquares()[1])).toHaveTextContent("O");
     expect(screen.getByRole("status")).toHaveTextContent("Turn: X");
   });
 
@@ -112,7 +117,7 @@ describe("Tic Tac Toe core behaviors", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Turn: X");
     const squares = getSquares();
     squares.forEach((sq, idx) => {
-      expect(sq).toHaveTextContent("");
+      expect(getSquareValueEl(sq)).toHaveTextContent("");
       expect(sq).toHaveAttribute("aria-label", `Square ${idx + 1}, empty`);
       expect(sq).not.toBeDisabled();
     });
