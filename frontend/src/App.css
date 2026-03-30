@@ -1,104 +1,170 @@
-/* CSS Variables for Theme Management */
+/* App-level layout */
 :root {
-  /* Light theme colors */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8f9fa;
-  --text-primary: #282c34;
-  --text-secondary: #61dafb;
-  --border-color: #e9ecef;
-  --button-bg: #007bff;
-  --button-text: #ffffff;
-}
+  /* Light theme aligned to provided style guide */
+  --bg: #f9fafb;
+  --surface: #ffffff;
+  --text: #111827;
+  --muted: #64748b;
 
-[data-theme="dark"] {
-  /* Dark theme colors */
-  --bg-primary: #1a1a1a;
-  --bg-secondary: #282c34;
-  --text-primary: #ffffff;
-  --text-secondary: #61dafb;
-  --border-color: #404040;
-  --button-bg: #0056b3;
-  --button-text: #ffffff;
+  --primary: #3b82f6;
+  --primary-600: #2563eb;
+  --success: #06b6d4;
+  --danger: #ef4444;
+
+  --border: rgba(17, 24, 39, 0.12);
+  --shadow: 0 10px 30px rgba(17, 24, 39, 0.12);
+
+  --radius: 16px;
 }
 
 .App {
+  min-height: 100vh;
+  background: radial-gradient(circle at 25% 20%, rgba(59, 130, 246, 0.12), transparent 45%),
+    radial-gradient(circle at 80% 60%, rgba(6, 182, 212, 0.12), transparent 40%),
+    var(--bg);
+  color: var(--text);
+}
+
+/* Centered responsive page */
+.ttt-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+/* Card */
+.ttt-card {
+  width: 100%;
+  max-width: 520px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 28px;
   text-align: center;
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  min-height: 100vh;
-  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.ttt-title {
+  margin: 0 0 8px 0;
+  font-size: 28px;
+  letter-spacing: -0.02em;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: var(--bg-secondary);
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: var(--text-primary);
-  transition: background-color 0.3s ease;
-  position: relative;
-}
-
-.App-link {
-  color: var(--text-secondary);
-  transition: color 0.3s ease;
-}
-
-.theme-toggle {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background-color: var(--button-bg);
-  color: var(--button-text);
-  border: none;
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-size: 14px;
+.ttt-status {
+  margin: 10px 0 18px 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(59, 130, 246, 0.06);
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.theme-toggle:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+/* Board */
+.ttt-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(72px, 1fr));
+  gap: 12px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.ttt-square {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  border-radius: 14px;
+  height: 92px;
+
+  font-size: 42px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text);
+
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease, background-color 120ms ease;
+}
+
+.ttt-square:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(59, 130, 246, 0.35);
+  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.12);
+}
+
+.ttt-square:active:not(:disabled) {
+  transform: translateY(0px);
+}
+
+.ttt-square:focus-visible {
+  outline: 3px solid rgba(59, 130, 246, 0.35);
+  outline-offset: 2px;
+}
+
+.ttt-square:disabled {
+  cursor: not-allowed;
   opacity: 0.9;
 }
 
-.theme-toggle:active {
-  transform: translateY(0);
+.ttt-square--highlight {
+  border-color: rgba(6, 182, 212, 0.65);
+  background: rgba(6, 182, 212, 0.10);
+  box-shadow: 0 10px 18px rgba(6, 182, 212, 0.14);
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* Actions */
+.ttt-actions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: center;
 }
 
-/* Responsive design for mobile */
-@media (max-width: 768px) {
-  .theme-toggle {
-    top: 10px;
-    right: 10px;
-    padding: 8px 16px;
-    font-size: 12px;
+.ttt-reset-btn {
+  appearance: none;
+  border: 1px solid rgba(37, 99, 235, 0.30);
+  background: linear-gradient(180deg, var(--primary), var(--primary-600));
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+  box-shadow: 0 10px 18px rgba(37, 99, 235, 0.18);
+}
+
+.ttt-reset-btn:hover {
+  transform: translateY(-1px);
+  opacity: 0.96;
+}
+
+.ttt-reset-btn:active {
+  transform: translateY(0px);
+}
+
+.ttt-reset-btn:focus-visible {
+  outline: 3px solid rgba(59, 130, 246, 0.35);
+  outline-offset: 2px;
+}
+
+.ttt-hint {
+  margin: 16px 0 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Mobile adjustments */
+@media (max-width: 420px) {
+  .ttt-card {
+    padding: 20px;
+  }
+
+  .ttt-board {
+    gap: 10px;
+    grid-template-columns: repeat(3, minmax(64px, 1fr));
+  }
+
+  .ttt-square {
+    height: 82px;
+    font-size: 40px;
   }
 }
